@@ -1,5 +1,6 @@
 package CarCareBackend.src.main.java.carcare.config;
 
+import CarCareBackend.src.main.java.carcare.http.Router;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -8,28 +9,19 @@ import java.nio.charset.StandardCharsets;
 
 
 public class Server{
+    private final HttpServer server;
 
-    public static void main(String[] args) throws IOException {
+    public Server(int port, Router router) throws IOException{
+        server=HttpServer.create(new InetSocketAddress(port),0);
+        server.createContext("/",router);
+    }
 
-        HttpServer server=HttpServer.create(new InetSocketAddress(8080),0);
-
-        server.createContext("/vehicles",exchange->{
-            System.out.println("Request received!");
-
-            String method=exchange.getRequestMethod();
-            String path=exchange.getRequestURI().getPath();
-            String body=new String(exchange.getRequestBody().readAllBytes(),StandardCharsets.UTF_8);
-
-            System.out.println(method);
-            System.out.println(path);
-            System.out.println(body);
-        });
-
-
-
+    public void start() throws IOException{
         server.start();
+        System.out.println("Server started...");
+    }
 
-
-
+    public void stop(){
+        server.stop(1);
     }
 }

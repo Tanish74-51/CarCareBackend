@@ -27,7 +27,7 @@ public class Client {
             String data = inp.nextLine();
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/vehicles"))
+                    .uri(URI.create("http://localhost:8080/vehicles/100"))
                     .header("Content-Type", "text/plain")
                     .POST(HttpRequest.BodyPublishers.ofString(data))
                     .build();
@@ -54,6 +54,7 @@ public class Client {
             System.out.println(response.body());
         }
 
+        client.close();
         inp.close();
     }
 }

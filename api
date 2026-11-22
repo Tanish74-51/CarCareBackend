@@ -1,0 +1,39 @@
+1. Mechanics
+- GET /mechanics - Get all mechanics.
+- GET /mechanics/{id} - Get a specific mechanic.
+- POST /mechanics - Register a new mechanic.
+- PUT /mechanics/{id} - Replace all details of a mechanic.
+- PATCH /mechanics/{id} - Partially update mechanic details.
+- DELETE /mechanics/{id} - Delete a mechanic.
+2. Vehicles
+- GET /vehicles - Get all vehicles.
+- GET /vehicles/{id} - Get a specific vehicle.
+- POST /vehicles - Register a new vehicle.
+- PUT /vehicles/{id} - Replace all vehicle details.
+- PATCH /vehicles/{id} - Partially update vehicle details.
+- DELETE /vehicles/{id} - Delete a vehicle.
+3. Service Centres
+- GET /service-centres - Get service centres.
+- GET /service-centres/{id} - Get details of a specific service centre.
+- POST /service-centres - Register a new service centre.
+- PUT /service-centres/{id} - Replace all service centre details.
+- PATCH /service-centres/{id} - Partially update service centre details.
+4. Service Visits
+- GET /service-visits - Get all service visits.
+- GET /service-visits/{id} - Get details of a specific service visit.
+- POST /service-visits - Create a service visit.
+- PUT /service-visits/{id} - Replace all service visit details.
+- PATCH /service-visits/{id} - Partially update service visit details.
+5. Roadside Assistance
+- POST /assistance-requests - Create a roadside assistance request.
+- GET /assistance-requests/{id} - Get details of an assistance request.
+- PUT /assistance-requests/{id} - Replace all assistance request details.
+- PATCH /assistance-requests/{id} - Partially update an assistance request, such as its status.
+- DELETE /assistance-requests/{id} - Cancel an assistance request.
+6. Community Pings
+- POST /pings - Create a ping requesting help from nearby users.
+- GET /pings/{id} - Get details of a specific ping.
+- GET /pings/{id}/recipients - Get the users who received the ping.
+- PUT /pings/{id} - Replace all ping details.
+- PATCH /pings/{id} - Partially update ping details or status.
+- DELETE /pings/{id} - Delete or cancel a ping.
