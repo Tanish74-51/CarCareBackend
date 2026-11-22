@@ -1,8 +1,6 @@
 package CarCareBackend.src.main.java.carcare.http;
 
 import CarCareBackend.src.main.java.carcare.controller.*;
-import CarCareBackend.src.main.java.carcare.model.Request;
-import CarCareBackend.src.main.java.carcare.model.Response;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;

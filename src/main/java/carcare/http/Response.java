@@ -1,4 +1,4 @@
-package CarCareBackend.src.main.java.carcare.model;
+package CarCareBackend.src.main.java.carcare.http;
 
 import com.sun.net.httpserver.Headers;
 
