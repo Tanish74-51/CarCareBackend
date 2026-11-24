@@ -1,19 +1,19 @@
 package CarCareBackend.src.main.java.carcare;
 
+import CarCareBackend.src.main.java.carcare.config.Database;
 import CarCareBackend.src.main.java.carcare.config.Server;
 import CarCareBackend.src.main.java.carcare.http.Router;
 
-import java.io.IOException;
-
 public class CarCareApplication {
-    public static void main(String[] args) {
-        Router router=new Router();
-        try {
-            Server server=new Server(8080,router);
-            server.start();
-        }
-        catch(IOException e) {
-            System.out.println("Server couldn't get started");
-        }
+
+    public static void main(String[] args) throws Exception {
+        Database.init();
+
+        String portValue = System.getenv("PORT");
+        int port = portValue == null || portValue.isBlank() ? 8080 : Integer.parseInt(portValue.trim());
+
+        Server server = new Server(port, new Router());
+        Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
+        server.start();
     }
 }

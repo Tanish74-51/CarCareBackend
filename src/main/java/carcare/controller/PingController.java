@@ -4,46 +4,50 @@ import CarCareBackend.src.main.java.carcare.http.Request;
 import CarCareBackend.src.main.java.carcare.http.Response;
 import CarCareBackend.src.main.java.carcare.model.Ping;
 import CarCareBackend.src.main.java.carcare.service.PingService;
-import java.util.List;
+import CarCareBackend.src.main.java.carcare.service.PingService.PingDetails;
 
-public class PingController extends BaseController{
+import java.util.UUID;
 
-    private final PingService pingService=new PingService();
+public class PingController extends BaseController {
 
-    public Response createPing(Request request) throws Exception{
-        String body=request.getBody();
-        Ping ping=revertToJson(body,Ping.class);
-        pingService.createPing(ping);
-        return responseBuilder(201,"Ping created successfully");
+    private final PingService pingService = new PingService();
+
+    // GET /pings   the pings I created plus the pings where I am the helper
+    public Response getMyPings(Request request) {
+        return responseBuilder(200, pingService.getPings(request.getUserId()));
     }
 
-    public Response getPing(Request request) throws Exception{
-        String id=extractId(request);
-        Ping ping=pingService.getPing(id);
-        return responseBuilder(200,ping);
+    // creates the ping; a user from the same city and state is picked as the helper automatically
+    public Response createPing(Request request) {
+        PingDetails created = pingService.createPing(revertToJson(request.getBody(), Ping.class), request.getUserId());
+        return responseBuilder(201, created);
     }
 
-    public Response getRecipients(Request request) throws Exception{
-        return responseBuilder(501,"Recipient retrieval not implemented yet");
+    public Response getPing(Request request) {
+        UUID id = extractId(request);
+        return responseBuilder(200, pingService.getPingDetails(id, request.getUserId()));
     }
 
-    public Response replacePing(Request request) throws Exception{
-        String id=extractId(request);
-        String body=request.getBody();
-        pingService.replacePing(id,revertToJson(body,Ping.class));
-        return responseBuilder(200,"Ping replaced successfully");
+    public Response updatePing(Request request) {
+        UUID id = extractId(request);
+        return responseBuilder(200, pingService.updatePing(id, request.getBody(), request.getUserId()));
     }
 
-    public Response updatePing(Request request) throws Exception{
-        String id=extractId(request);
-        String body=request.getBody();
-        pingService.updatePing(id,body);
-        return responseBuilder(200,"Ping updated successfully");
+    // POST /pings/{id}/complete   (the user who asked or the helper who accepted; who is asking comes from the token)
+    public Response completePing(Request request) {
+        UUID id = extractId(request);
+        return responseBuilder(200, pingService.completePing(id, request.getUserId()));
     }
 
-    public Response deletePing(Request request) throws Exception{
-        String id=extractId(request);
-        pingService.deletePing(id);
-        return responseBuilder(200,"Ping deleted successfully");
+    // DELETE /pings/{id}   (only the user who created it)
+    public Response cancelPing(Request request) {
+        UUID id = extractId(request);
+        return responseBuilder(200, pingService.cancelPing(id, request.getUserId()));
+    }
+
+    // GET /pings/{id}/helper   which user accepted
+    public Response getHelper(Request request) {
+        UUID id = extractId(request);
+        return responseBuilder(200, pingService.getHelper(id, request.getUserId()));
     }
 }
