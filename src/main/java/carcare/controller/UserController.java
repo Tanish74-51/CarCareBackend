@@ -15,14 +15,12 @@ public class UserController extends BaseController {
 
     private final UserService userService = new UserService();
 
-    // POST /users   (public) register a new user   body: name, email, password, phoneNumber, address, city, state
+
     public Response register(Request request) {
         User created = userService.createUser(revertToJson(request.getBody(), User.class));
         return responseBuilder(201, created);
     }
 
-    // POST /login   (public)   body: {"email": "...", "password": "..."}   ->   {"token": "<uuid>", "user": {...}}
-    // The password is only used here. The client keeps the token and sends it in the X-Token header from then on.
     public Response login(Request request) {
         JsonNode body = Json.objectBody(request.getBody());
         JsonNode email = body.get("email");
@@ -36,13 +34,12 @@ public class UserController extends BaseController {
         return responseBuilder(200, Map.of("token", token.toString(), "user", user));
     }
 
-    // POST /logout
+
     public Response logout(Request request) {
         Sessions.logout(request.getToken());
         return responseBuilder(200, "Logged out");
     }
 
-    // GET /me   the logged-in user (the id comes from the token, not from the url)
     public Response getMe(Request request) {
         return responseBuilder(200, userService.getUser(request.getUserId()));
     }
@@ -58,7 +55,7 @@ public class UserController extends BaseController {
 
     public Response deleteMe(Request request) {
         userService.deleteUser(request.getUserId());
-        Sessions.logoutUser(request.getUserId());       // every token of this account, not just this one
+        Sessions.logoutUser(request.getUserId());
         return responseBuilder(200, "User deleted successfully");
     }
 }

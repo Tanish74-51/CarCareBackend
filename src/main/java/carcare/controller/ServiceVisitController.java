@@ -13,7 +13,6 @@ public class ServiceVisitController extends BaseController {
 
     private final ServiceVisitService serviceVisitService = new ServiceVisitService();
 
-    // GET /service-visits   the bookings of the logged-in user
     public Response getMyServiceVisits(Request request) {
         List<VisitDetails> data = serviceVisitService.getServiceVisits(request.getUserId());
         return responseBuilder(200, data);
@@ -24,7 +23,6 @@ public class ServiceVisitController extends BaseController {
         return responseBuilder(200, serviceVisitService.getServiceVisitDetails(id, request.getUserId()));
     }
 
-    // the mechanic is picked by the server
     public Response createServiceVisit(Request request) {
         VisitDetails created = serviceVisitService.createServiceVisit(
                 revertToJson(request.getBody(), ServiceVisit.class), request.getUserId());
@@ -49,12 +47,10 @@ public class ServiceVisitController extends BaseController {
         return responseBuilder(200, "Service visit deleted successfully");
     }
 
-    // GET /admin/service-visits   (admin) every booking
     public Response adminList(Request request) {
         return responseBuilder(200, serviceVisitService.getAllServiceVisits());
     }
 
-    // PATCH /admin/service-visits/{id}   (admin) status, cost, notes
     public Response adminUpdate(Request request) {
         UUID id = extractId(request);
         return responseBuilder(200, serviceVisitService.adminUpdate(id, request.getBody()));

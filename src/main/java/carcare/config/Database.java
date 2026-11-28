@@ -1,7 +1,9 @@
 package CarCareBackend.src.main.java.carcare.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -60,9 +62,38 @@ public class Database {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    // a new connection per call keeps things simple and thread-safe
+    // One shared HikariCP pool: connections are opened once and reused instead of opening a new one per query.
+    // DB_POOL_SIZE = most connections ever open (default 10; the server runs 8 requests at a time).
+    private static final HikariDataSource POOL = createPool();
+
+    private static HikariDataSource createPool() {
+        HikariConfig config = new HikariConfig();
+        config.setPoolName("carcare");
+        config.setJdbcUrl(URL);
+        config.setUsername(USER);
+        config.setPassword(PASSWORD);
+        config.setMaximumPoolSize(poolSize());
+        config.setConnectionTimeout(10_000);          // a busy pool makes callers wait up to 10 s, then fails
+        config.setInitializationFailTimeout(-1);      // don't crash on class load if MySQL is still starting; init() reports it
+        return new HikariDataSource(config);
+    }
+
+    private static int poolSize() {
+        String value = System.getenv("DB_POOL_SIZE");
+        try {
+            return value == null || value.isBlank() ? 10 : Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 10;
+        }
+    }
+
+    // close() on the returned connection hands it back to the pool, so the try-with-resources in the repositories stay as they are
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        return POOL.getConnection();
+    }
+
+    public static void closePool() {
+        POOL.close();
     }
 
     // creates the tables on first start

@@ -12,14 +12,13 @@ public class VehicleController extends BaseController {
 
     private final VehicleService vehicleService = new VehicleService();
 
-    // GET /vehicles   only the vehicles of the logged-in user
     public Response getMyVehicles(Request request) {
         List<Vehicle> data = vehicleService.getUserVehicles(request.getUserId());
         return responseBuilder(200, data);
     }
 
     public Response getVehicle(Request request) {
-        UUID id = extractId(request);
+        UUID id=extractId(request);
         return responseBuilder(200, vehicleService.getVehicle(id, request.getUserId()));
     }
 

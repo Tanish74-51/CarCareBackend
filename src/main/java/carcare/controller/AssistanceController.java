@@ -13,7 +13,6 @@ public class AssistanceController extends BaseController {
 
     private final AssistanceService assistanceService = new AssistanceService();
 
-    // GET /assistance-requests   only the requests of the logged-in user
     public Response getMyRequests(Request request) {
         List<Assistance> requests = assistanceService.getAssistanceRequests(request.getUserId());
         return responseBuilder(200, requests);

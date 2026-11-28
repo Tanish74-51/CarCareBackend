@@ -34,23 +34,19 @@ public class AssistanceService extends BaseService {
             "REQUESTED", "ON_THE_WAY", "IN_PROGRESS", "COMPLETED", "CANCELLED"
     );
 
-    // the only allowed moves: a request can't jump from REQUESTED straight to COMPLETED
     private static final Map<String, Set<String>> NEXT_STATUS = Map.of(
             "REQUESTED", Set.of("CANCELLED"),
             "ON_THE_WAY", Set.of("IN_PROGRESS", "CANCELLED"),
             "IN_PROGRESS", Set.of("COMPLETED", "CANCELLED")
     );
 
-    // what the CUSTOMER may edit with PATCH. Status is not here: they cancel with DELETE or finish with POST .../complete.
     private static final Set<String> USER_FIELDS = Set.of("assistanceType", "description", "address");
 
-    // what an ADMIN (the dispatcher) may change
     private static final Set<String> ADMIN_FIELDS = Set.of("status", "estimatedCost", "finalCost");
 
-    // what the client sees for "which mechanic accepted my request"
     public record AssignedMechanic(UUID id, String name, String phoneNumber) {}
 
-    // what the client sees: the request, the mechanic (if one was found) and a ready-to-show message
+
     public record AssistanceDetails(Assistance request, AssignedMechanic mechanic, String message) {}
 
     private AssistanceDetails details(Assistance assistance) {
@@ -113,7 +109,6 @@ public class AssistanceService extends BaseService {
         requireNonNegative(assistance.getFinalCost(), "Final cost");
     }
 
-    // a request is only visible to the user who made it
     private Assistance owned(UUID id, UUID userId) {
         Assistance assistance = found(assistanceRepository.getAssistanceRequest(id), "Assistance request not found");
         requireOwner(assistance.getUserId(), userId);
@@ -127,12 +122,11 @@ public class AssistanceService extends BaseService {
     public AssistanceDetails getAssistanceDetails(UUID id, UUID userId) {
         Assistance assistance = owned(id, userId);
 
-        // nobody was free when the request was made: look again now (a busy mechanic may be free by now)
         if (assistance.getStatus().equals("REQUESTED")) {
             Mechanic mechanic = pickMechanic(assistance.getCity(), assistance.getState());
             if (mechanic != null) {
                 if (!assistanceRepository.claimAssistanceRequest(id, mechanic.getId(), LocalDateTime.now())) {
-                    mechanicRepository.markFree(mechanic.getId());    // another call matched this request first
+                    mechanicRepository.markFree(mechanic.getId());
                 }
                 assistance = assistanceRepository.getAssistanceRequest(id);
             }
@@ -140,7 +134,6 @@ public class AssistanceService extends BaseService {
         return details(assistance);
     }
 
-    // creates the request and immediately tries to give it a mechanic from the user's registered city and state
     public AssistanceDetails createAssistanceRequest(Assistance assistance, UUID userId) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -156,7 +149,6 @@ public class AssistanceService extends BaseService {
         assistance.setCreatedAt(now);
         assistance.setUpdatedAt(now);
 
-        // city and state always come from the user's registration, the client doesn't send them
         User user = userRepository.getUser(userId);
         if (user == null) {
             throw new IllegalArgumentException("User does not exist");
@@ -166,7 +158,6 @@ public class AssistanceService extends BaseService {
 
         validateAssistance(assistance);
 
-        // no free mechanic: the request just stays REQUESTED
         Mechanic mechanic = pickMechanic(assistance.getCity(), assistance.getState());
         if (mechanic != null) {
             assistance.setMechanicId(mechanic.getId());
@@ -178,15 +169,13 @@ public class AssistanceService extends BaseService {
             assistanceRepository.createAssistanceRequest(assistance);
         } catch (RuntimeException e) {
             if (mechanic != null) {
-                mechanicRepository.markFree(mechanic.getId());       // don't leave a mechanic held for a request that was never saved
+                mechanicRepository.markFree(mechanic.getId());
             }
             throw e;
         }
         return details(assistance);
     }
 
-    // Picks a random free mechanic from the same city and state and holds them for MECHANIC_BUSY_SECONDS (30).
-    // markBusy only succeeds for one caller, so two requests can never get the same mechanic.
     private Mechanic pickMechanic(String city, String state) {
         List<Mechanic> free = mechanicRepository.getFreeMechanics(city, state);
         Collections.shuffle(free, random);
@@ -200,7 +189,6 @@ public class AssistanceService extends BaseService {
         return null;
     }
 
-    // the job is over (completed or cancelled): free the mechanic now, unless they have since taken another job
     private void releaseMechanic(Assistance assistance) {
         UUID mechanicId = assistance.getMechanicId();
         if (mechanicId != null && assistanceRepository.getActiveForMechanic(mechanicId, assistance.getId()).isEmpty()) {
@@ -208,7 +196,6 @@ public class AssistanceService extends BaseService {
         }
     }
 
-    // PUT: replaces the details the user entered; the mechanic, status and timestamps stay as they were
     public AssistanceDetails replaceAssistanceRequest(UUID id, Assistance assistance, UUID userId) {
         Assistance existing = owned(id, userId);
         checkNotClosed(existing);
@@ -225,7 +212,6 @@ public class AssistanceService extends BaseService {
         return details(existing);
     }
 
-    // PATCH by the customer: type, description and address only
     public AssistanceDetails updateAssistanceRequest(UUID id, String body, UUID userId) {
         Assistance existing = owned(id, userId);
         checkNotClosed(existing);
@@ -251,8 +237,6 @@ public class AssistanceService extends BaseService {
         return details(existing);
     }
 
-    // the CUSTOMER says the job is done. Only possible once a mechanic has been assigned (ON_THE_WAY or IN_PROGRESS);
-    // a request nobody accepted yet is cancelled instead. Saved as COMPLETED with completed_at set, and the mechanic is freed.
     public AssistanceDetails completeAssistanceRequest(UUID id, UUID userId) {
         Assistance existing = owned(id, userId);
         checkNotClosed(existing);
@@ -272,7 +256,7 @@ public class AssistanceService extends BaseService {
         return details(existing);
     }
 
-    // ---- admin (dispatcher) ----
+
 
     public List<Assistance> getAllRequests() {
         return assistanceRepository.getAllAssistanceRequests();

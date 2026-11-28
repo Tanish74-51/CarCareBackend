@@ -12,12 +12,10 @@ public class PingController extends BaseController {
 
     private final PingService pingService = new PingService();
 
-    // GET /pings   the pings I created plus the pings where I am the helper
     public Response getMyPings(Request request) {
         return responseBuilder(200, pingService.getPings(request.getUserId()));
     }
 
-    // creates the ping; a user from the same city and state is picked as the helper automatically
     public Response createPing(Request request) {
         PingDetails created = pingService.createPing(revertToJson(request.getBody(), Ping.class), request.getUserId());
         return responseBuilder(201, created);
@@ -33,19 +31,16 @@ public class PingController extends BaseController {
         return responseBuilder(200, pingService.updatePing(id, request.getBody(), request.getUserId()));
     }
 
-    // POST /pings/{id}/complete   (the user who asked or the helper who accepted; who is asking comes from the token)
     public Response completePing(Request request) {
         UUID id = extractId(request);
         return responseBuilder(200, pingService.completePing(id, request.getUserId()));
     }
 
-    // DELETE /pings/{id}   (only the user who created it)
     public Response cancelPing(Request request) {
         UUID id = extractId(request);
         return responseBuilder(200, pingService.cancelPing(id, request.getUserId()));
     }
 
-    // GET /pings/{id}/helper   which user accepted
     public Response getHelper(Request request) {
         UUID id = extractId(request);
         return responseBuilder(200, pingService.getHelper(id, request.getUserId()));

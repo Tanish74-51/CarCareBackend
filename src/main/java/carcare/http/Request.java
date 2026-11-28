@@ -3,16 +3,17 @@ package CarCareBackend.src.main.java.carcare.http;
 import com.sun.net.httpserver.Headers;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class Request {
     private final String method;
-    private final String uri;            // full uri INCLUDING the query string
+    private final String uri;
     private final Headers headers;
     private final String body;
-    private final Map<String, String> pathParams;   // e.g. {id} from /mechanics/{id}
-    private final UUID userId;           // who is logged in (null on public routes)
-    private final UUID token;            // the token that was sent (null on public routes)
+    private final Map<String, String> pathParams;
+    private final UUID userId;
+    private final UUID token;
 
     public Request(String method, String uri, Headers headers, String body,
                    Map<String, String> pathParams, UUID userId, UUID token) {
@@ -23,6 +24,18 @@ public class Request {
         this.pathParams = pathParams;
         this.userId = userId;
         this.token = token;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this==o) return true;
+        if (o==null || getClass()!=o.getClass()) return false;
+        Request other=(Request) o;
+        return Objects.equals(uri, other.uri) && Objects.equals(userId, other.userId);
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(uri,userId);
     }
 
     public String getUri() {

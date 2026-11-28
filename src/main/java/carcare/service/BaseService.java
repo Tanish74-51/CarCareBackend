@@ -21,7 +21,6 @@ public class BaseService {
 
     protected static final Random random = new Random();
 
-    // each of these returns the cleaned (trimmed) value, or throws IllegalArgumentException -> HTTP 400
 
     protected String requireString(String value, String fieldName) {
         return requireString(value, fieldName, 255);
@@ -80,7 +79,6 @@ public class BaseService {
         return value;
     }
 
-    // a missing record is a 404, not a 400
     protected <T> T found(T value, String message) {
         if (value == null) {
             throw new NoSuchElementException(message);
@@ -96,7 +94,6 @@ public class BaseService {
         }
     }
 
-    // PATCH: only the fields listed in "allowed" may appear in the body; they are applied onto "existing"
     protected <T> T patch(T existing, String body, Set<String> allowed) {
         JsonNode changes = Json.objectBody(body);
         changes.fieldNames().forEachRemaining(field -> {
@@ -107,7 +104,6 @@ public class BaseService {
         return Json.merge(existing, changes);
     }
 
-    // a user may only touch their own records: anything else is HTTP 403
     protected void requireOwner(UUID ownerId, UUID userId) {
         if (ownerId == null || !ownerId.equals(userId)) {
             throw new SecurityException("This record belongs to another user");

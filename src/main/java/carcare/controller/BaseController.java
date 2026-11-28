@@ -11,12 +11,10 @@ import java.util.UUID;
 
 public class BaseController {
 
-    // returns the object as JSON
     public Response responseBuilder(int statusCode, Object data) {
         return Response.json(statusCode, data);
     }
 
-    // returns {"message":"..."} (always valid JSON, quotes are escaped properly)
     public Response responseBuilder(int statusCode, String message) {
         return Response.message(statusCode, message);
     }
@@ -25,7 +23,6 @@ public class BaseController {
         return Json.read(json, objClass);
     }
 
-    // the {id} from the url, e.g. /mechanics/{id}/...
     public UUID extractId(Request request) {
         return parseUUID(request.getPathParams().get("id"), "id");
     }
@@ -41,7 +38,6 @@ public class BaseController {
         }
     }
 
-    // ?key=value&key2=value2  ->  map (values are url-decoded)
     public HashMap<String, String> extractParameters(Request request) {
         HashMap<String, String> map = new HashMap<>();
 
@@ -65,7 +61,6 @@ public class BaseController {
         return map;
     }
 
-    // a required query parameter, e.g. ?city=Pune
     public String requireParameter(HashMap<String, String> parameters, String name) {
         String value = parameters.get(name);
         if (value == null || value.isBlank()) {

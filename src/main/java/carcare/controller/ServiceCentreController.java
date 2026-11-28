@@ -45,9 +45,6 @@ public class ServiceCentreController extends BaseController {
         return responseBuilder(200, "Service centre deleted successfully");
     }
 
-    // GET /service-centres/nearby?city=Mohali[&state=Punjab]
-    // The centres in that city only. Without ?city the logged-in user's own city is used.
-    // Answers {"city", "state", "serviceCentres": [...], "message": "..."}; the list is empty when the city has none.
     public Response getNearby(Request request) {
         HashMap<String, String> parameters = extractParameters(request);
         return responseBuilder(200, serviceCentreService.findNearby(request.getUserId(), parameters.get("city"), parameters.get("state")));

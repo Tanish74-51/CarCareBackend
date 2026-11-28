@@ -37,15 +37,11 @@ public class Router implements HttpHandler {
     private final PingController pingController = new PingController();
 
     public Router() {
-        // NOTE: routes are checked in this order, so fixed paths (like /service-centres/nearby)
-        // must be listed BEFORE the {id} version of the same path.
-        // addPublicRoute = no login needed, addRoute = the X-Token header is required.
 
         addPublicRoute("POST", "/users", userController::register);
         addPublicRoute("POST", "/login", userController::login);
         addRoute("POST", "/logout", userController::logout);
 
-        // "me" = the logged-in user, so nobody ever needs to know their own UUID
         addRoute("GET", "/me", userController::getMe);
         addRoute("PUT", "/me", userController::replaceMe);
         addRoute("PATCH", "/me", userController::updateMe);
@@ -89,7 +85,6 @@ public class Router implements HttpHandler {
         addRoute("GET", "/assistance-requests/{id}/mechanic", assistanceController::getMechanic);
         addRoute("POST", "/assistance-requests/{id}/complete", assistanceController::completeRequest);
 
-        // admin = dispatcher: the only one who moves jobs forward (on the way -> in progress -> completed) and sets costs
         addAdminRoute("GET", "/admin/assistance-requests", assistanceController::adminList);
         addAdminRoute("PATCH", "/admin/assistance-requests/{id}", assistanceController::adminUpdate);
         addAdminRoute("GET", "/admin/service-visits", serviceVisitController::adminList);
@@ -108,7 +103,6 @@ public class Router implements HttpHandler {
 
     private record Route(String method, String path, Handler handler, Access access) {}
 
-    // any logged-in user
     public void addRoute(String method, String path, Handler handler) {
         routes.add(new Route(method, path, handler, Access.USER));
     }
@@ -117,20 +111,18 @@ public class Router implements HttpHandler {
         routes.add(new Route(method, path, handler, Access.PUBLIC));
     }
 
-    // logged in AND role ADMIN
-    public void addAdminRoute(String method, String path, Handler handler) {
-        routes.add(new Route(method, path, handler, Access.ADMIN));
+    public void addAdminRoute(String method,String path,Handler handler) {
+        routes.add(new Route(method,path,handler,Access.ADMIN));
     }
 
-    // returns the {placeholder} values if the path matches the route, otherwise null
     public Map<String, String> pathMatcher(String routePath, String requestPath) {
-        String[] routeSplit = routePath.split("/");
-        String[] requestSplit = requestPath.split("/");
+        String[] routeSplit=routePath.split("/");
+        String[] requestSplit=requestPath.split("/");
 
-        if (routeSplit.length != requestSplit.length) return null;
+        if (routeSplit.length!=requestSplit.length) return null;
 
-        Map<String, String> params = new HashMap<>();
-        for (int i = 0; i < routeSplit.length; i++) {
+        Map<String,String> params=new HashMap<>();
+        for (int i=0;i<routeSplit.length;i++) {
             if (routeSplit[i].startsWith("{") && routeSplit[i].endsWith("}")) {
                 params.put(routeSplit[i].substring(1, routeSplit[i].length() - 1), requestSplit[i]);
             } else if (!routeSplit[i].equals(requestSplit[i])) {
@@ -140,7 +132,6 @@ public class Router implements HttpHandler {
         return params;
     }
 
-    // the X-Token header as a UUID, or null if it is missing or not a UUID
     private UUID parseToken(String value) {
         if (value == null) return null;
         try {
@@ -155,10 +146,10 @@ public class Router implements HttpHandler {
         Headers responseHeaders = exchange.getResponseHeaders();
         responseHeaders.putAll(response.getHeaders());
 
-        byte[] responseBytes = response.getBody().getBytes(StandardCharsets.UTF_8);
+        byte[] responseBytes=response.getBody().getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(response.getStatusCode(), responseBytes.length);
 
-        try (OutputStream outputStream = exchange.getResponseBody()) {
+        try (OutputStream outputStream=exchange.getResponseBody()) {
             outputStream.write(responseBytes);
         }
     }
@@ -168,7 +159,7 @@ public class Router implements HttpHandler {
 
         String requestMethod = exchange.getRequestMethod();
         String requestPath = exchange.getRequestURI().getPath();
-        String requestUri = exchange.getRequestURI().toString();     // keeps ?query=string
+        String requestUri = exchange.getRequestURI().toString();
         Headers requestHeaders = exchange.getRequestHeaders();
 
         byte[] bodyBytes = exchange.getRequestBody().readNBytes(MAX_BODY_BYTES + 1);
@@ -176,9 +167,10 @@ public class Router implements HttpHandler {
             sendResponse(exchange, Response.error(413, "Request body too large"));
             return;
         }
-        String requestBody = new String(bodyBytes, StandardCharsets.UTF_8);
 
-        boolean pathFound = false;      // some route has this path (maybe with another method)
+        String requestBody=new String(bodyBytes, StandardCharsets.UTF_8);
+
+        boolean pathFound = false;
         Response response = null;
 
         for (Route route : routes) {
@@ -188,14 +180,14 @@ public class Router implements HttpHandler {
             pathFound = true;
             if (!route.method().equals(requestMethod)) continue;
 
-            // protected route: the token must belong to a logged-in user
             UUID token = null;
             UUID userId = null;
-            if (route.access() != Access.PUBLIC) {
-                token = parseToken(requestHeaders.getFirst(TOKEN_HEADER));
-                Sessions.Session session = Sessions.get(token);
+
+            if (route.access()!=Access.PUBLIC) {
+                token=parseToken(requestHeaders.getFirst(TOKEN_HEADER));
+                Sessions.Session session=Sessions.get(token);
                 if (session == null) {
-                    response = Response.error(401, "Login required: send your token in the " + TOKEN_HEADER + " header");
+                    response=Response.error(401, "Login required: send your token in the " + TOKEN_HEADER + " header");
                     break;
                 }
                 if (route.access() == Access.ADMIN && !User.ADMIN.equals(session.role())) {
@@ -208,18 +200,18 @@ public class Router implements HttpHandler {
             try {
                 response = route.handler().handle(new Request(requestMethod, requestUri, requestHeaders, requestBody, pathParams, userId, token));
             } catch (IllegalArgumentException e) {
-                response = Response.error(400, e.getMessage());          // bad input
+                response = Response.error(400, e.getMessage());
             } catch (UnauthorizedException e) {
-                response = Response.error(401, e.getMessage());          // wrong email or password
+                response = Response.error(401, e.getMessage());
             } catch (SecurityException e) {
-                response = Response.error(403, e.getMessage());          // someone else's record
+                response = Response.error(403, e.getMessage());
             } catch (NoSuchElementException e) {
-                response = Response.error(404, e.getMessage());          // not found
+                response = Response.error(404, e.getMessage());
             } catch (IllegalStateException e) {
-                response = Response.error(409, e.getMessage());          // not allowed in current state
+                response = Response.error(409, e.getMessage());
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Error handling " + requestMethod + " " + requestPath, e);
-                response = Response.error(500, "Internal server error");
+                response=Response.error(500, "Internal server error");
             }
             if (response == null) {
                 logger.severe("Handler returned null for " + requestMethod + " " + requestPath);
